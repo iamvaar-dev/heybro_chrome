@@ -1,135 +1,353 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Heybro</title>
   <style>
     :root {
-      --bg: #0a0a0a;
-      --panel: #0f0f10;
-      --border: rgba(255,255,255,0.14);
-      --text: #f2f2f2;
-      --muted: #bdbdbd;
-      --white: #ffffff;
-      --black: #000000;
+      --bg: #09090b;
+      --text: #e4e4e7;
+      --text-dim: #a1a1aa;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --error: #ef4444;
+      --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
       margin: 0;
+      padding: 0;
       background: var(--bg);
       color: var(--text);
+      font-family: var(--font-sans);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-size: 13px;
+      line-height: 1.6;
     }
-    .container { display: flex; flex-direction: column; height: 100%; }
-    .brand { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 8px; }
-    .logo { display: flex; align-items: center; gap: 10px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--white); box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(255,255,255,0.4); }
-    .title { font-weight: 800; font-size: 16px; letter-spacing: 0.2px; }
-    .tag { opacity: 0.8; font-size: 11px; margin-top: 2px; color: var(--muted); }
-    .menu-btn { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(#fff, #d9d9d9); color: #111; border: 0; box-shadow: 0 6px 0 #aaa, 0 10px 16px rgba(0,0,0,0.25); cursor: pointer; }
-    .menu-btn:active { box-shadow: 0 2px 0 #888, 0 6px 12px rgba(0,0,0,0.25); transform: translateY(2px); }
-    .menu-panel { position: absolute; right: 12px; top: 48px; background: #111; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 18px 40px rgba(0,0,0,0.5); display: none; min-width: 160px; }
-    .menu-panel button { width: 100%; text-align: left; padding: 10px 12px; border: 0; background: transparent; color: var(--text); cursor: pointer; }
-    .menu-panel button:hover { background: #151515; }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; margin: 8px 12px; padding: 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 24px rgba(0,0,0,0.35); }
-    .row { display: flex; gap: 10px; align-items: center; }
-    .col { display: flex; flex-direction: column; gap: 8px; }
-    label { font-size: 12px; color: var(--muted); }
-    input, textarea { font-size: 14px; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.14); background: #121214; color: var(--text); outline: none; }
-    textarea { width: 100%; height: 72px; resize: vertical; }
-    .btn { border-radius: 10px; border: 0; cursor: pointer; }
-    .btn.secondary { border: 1px solid var(--border); background: #161616; color: var(--text); }
-    .btn-3d { background: linear-gradient(#fff, #e2e2e2); color: #111; box-shadow: 0 6px 0 #bdbdbd, 0 10px 18px rgba(0,0,0,0.3); font-weight: 700; }
-    .btn-3d:active { box-shadow: 0 2px 0 #9f9f9f, 0 6px 12px rgba(0,0,0,0.3); transform: translateY(2px); }
-    .log { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space: pre-wrap; background: #121214; border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-height: 96px; color: #d6d6e3; max-height: 220px; overflow-y: auto; }
-    .progress { height: 5px; background: #141414; border-radius: 999px; overflow: hidden; margin-top: 6px; }
-    .bar { height: 100%; width: 0%; background: linear-gradient(90deg, #fff, #d9d9d9); box-shadow: 0 0 20px rgba(255,255,255,0.2); transition: width .25s ease; }
-    .running .bar { animation: indeterminate 1.2s infinite; }
-    @keyframes indeterminate { 0% { width: 12%; transform: translateX(0%); } 50% { width: 44%; transform: translateX(58%); } 100% { width: 12%; transform: translateX(100%); } }
-    .screen { display: none; }
-    .screen.active { display: block; }
-    #screen-chat { display: flex; flex-direction: column; height: calc(100% - 100px); }
-    .chat-messages { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding: 8px; border: 1px solid var(--border); border-radius: 10px; background: #121214; }
-    .chat-msg { display: flex; gap: 8px; align-items: flex-start; }
-    .chat-role { font-weight: 700; color: var(--muted); min-width: 60px; padding-top: 2px; }
-    .chat-main { margin-bottom: 6px; }
-    .chat-details { border: 1px solid var(--border); border-radius: 8px; background: #14141b; padding: 8px; }
-    .toggle-details { margin-top: 4px; }
-    .chat-input { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+
+    /* Stream */
+    #stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+      font-family: var(--font-sans);
+    }
+
+    .msg-user {
+      align-self: flex-end;
+      background: #27272a;
+      padding: 8px 12px;
+      border-radius: 12px 12px 2px 12px;
+      max-width: 85%;
+      margin-bottom: 8px;
+    }
+
+    .msg-agent {
+      align-self: flex-start;
+      max-width: 100%;
+      white-space: pre-wrap;
+    }
+
+    .msg-agent p {
+      margin: 0 0 8px 0;
+    }
+
+    .msg-agent ul {
+      margin: 0 0 8px 0;
+      padding-left: 20px;
+    }
+
+    .msg-agent li {
+      margin-bottom: 4px;
+    }
+
+    /* Markdown Styles */
+    .md-bold {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .md-code {
+      font-family: var(--font-mono);
+      background: #27272a;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .md-block {
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      margin: 4px 0;
+      padding-left: 12px;
+      border-left: 2px solid #27272a;
+      font-size: 12px;
+    }
+
+    .todo-list {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      font-family: var(--font-sans);
+    }
+
+    .todo-item {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+      align-items: flex-start;
+    }
+
+    .todo-icon {
+      flex-shrink: 0;
+      width: 16px;
+      text-align: center;
+    }
+
+    .todo-text {
+      color: var(--text-dim);
+    }
+
+    .todo-text.active {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .todo-text.done {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    /* Cursor Effect */
+    .cursor::after {
+      content: '▋';
+      display: inline-block;
+      vertical-align: baseline;
+      animation: blink 1s step-end infinite;
+      color: var(--accent);
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* Input Area */
+    #input-area {
+      padding: 16px;
+      background: var(--bg);
+      border-top: 1px solid #27272a;
+      flex-shrink: 0;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    textarea {
+      width: 100%;
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      padding-right: 40px;
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      resize: none;
+      height: 44px;
+      max-height: 120px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+    }
+
+    #send-btn {
+      position: absolute;
+      right: 8px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    #send-btn:hover {
+      background: #2563eb;
+    }
+
+    #send-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* Settings Modal */
+    #settings-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #settings-modal.visible {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg);
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 320px;
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      background: #18181b;
+      border: 1px solid #27272a;
+      padding: 8px;
+      border-radius: 6px;
+      color: var(--text);
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      background: var(--accent);
+      color: white;
+    }
+
+    .header-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #52525b;
+      cursor: pointer;
+    }
+
+    .header-btn:hover {
+      color: var(--text);
+    }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="brand">
-      <div class="logo">
-        <div class="dot"></div>
-        <div>
-          <div class="title">Heybro</div>
-          <div class="tag">Automation agent with planning, memory, and DOM intelligence</div>
-        </div>
-      </div>
-    </div>
 
-    <button id="menu-btn" class="menu-btn">⋮</button>
-    <div id="menu-panel" class="menu-panel">
-      <button id="menu-settings">Settings</button>
-      <button id="menu-tools">Tools</button>
-      <button id="menu-logs">Logs</button>
-    </div>
+  <button class="header-btn" id="settings-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3" />
+      <path
+        d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+    </svg>
+  </button>
 
-    <div id="screen-chat" class="panel screen active">
-      <div class="col" style="gap:10px; height:100%">
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="chat-input">
-          <textarea id="instruction" placeholder="Describe what to automate"></textarea>
-          <button id="send-btn" class="btn btn-3d">Send</button>
-        </div>
-        <div class="progress">
-          <div class="bar" id="bar"></div>
-        </div>
-      </div>
-    </div>
-
-
-    <div id="screen-settings" class="panel screen">
-      <div class="row">
-        <div class="col" style="flex:1">
-          <label>Gemini API Key</label>
-          <input id="gemini-key" type="password" placeholder="AIza..." />
-        </div>
-        <div class="col" style="flex:1">
-          <label>Model</label>
-          <input id="gemini-model" type="text" value="gemini-2.5-flash" />
-        </div>
-      </div>
-      <div class="col" style="margin-top:12px">
-        <label>Mode</label>
-        <div class="seg">
-          <button id="mode-standard" class="active">Standard</button>
-          <button id="mode-experimental">Experimental</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="screen-tools" class="panel screen">
-      <div class="row">
-        <button id="annotate" class="btn secondary" style="flex:1">Toggle IDs</button>
-        <button id="clear" class="btn secondary" style="flex:1">Clear IDs</button>
-      </div>
-    </div>
-
-    <div id="screen-logs" class="panel screen">
-      <div class="col">
-        <label>Log</label>
-        <div id="log" class="log"></div>
-        <div class="row" style="margin-top:8px">
-          <button id="copy-logs" class="btn secondary" style="flex:1">Copy Logs</button>
-        </div>
-      </div>
+  <div id="stream">
+    <div class="msg-agent">
+      Hello! I'm Heybro. Ready to help.
     </div>
   </div>
-  <script src="sidepanel.js"></script>
+
+  <div id="input-area">
+    <div class="input-wrapper">
+      <textarea id="instruction" placeholder="Ask me to do something..." rows="1"></textarea>
+      <button id="send-btn">
+        <svg viewBox="0 0 24 24">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="settings-modal">
+    <div class="modal-content">
+      <div class="form-group">
+        <label>Gemini API Key</label>
+        <input type="password" id="gemini-key" placeholder="Enter API Key">
+      </div>
+      <div class="form-group">
+        <label>Model</label>
+        <input type="text" id="gemini-model" value="gemini-2.5-flash">
+      </div>
+      <div class="form-group">
+        <label>Mode</label>
+        <select id="mode-select">
+          <option value="standard">Standard</option>
+          <option value="experimental">Experimental (Better DOM)</option>
+        </select>
+      </div>
+      <button class="btn" id="save-settings">Save</button>
+    </div>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
 </body>
+
 </html>
