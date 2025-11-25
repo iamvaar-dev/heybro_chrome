@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Heybro",
+  "version": "0.1.0",
+  "description": "Don't change your browser just ask bro to do it in your fav browser",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "sidePanel",
+    "webNavigation",
+    "windows",
+    "cookies",
+    "downloads",
+    "history",
+    "alarms",
+    "notifications",
+    "contextMenus",
+    "clipboardRead",
+    "clipboardWrite",
+    "debugger"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Heybro"
+  }
+  ,
+  "web_accessible_resources": [{
+    "resources": [
+      "vendor/*"
+    ],
+    "matches": ["<all_urls>"]
+  }],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; worker-src 'self'"
+  }
+}
