@@ -28,16 +28,16 @@ if (!window.__heybro_dom_observer_added) {
 if (!window.__heybro_event_logger_added) {
   window.__heybro_event_logger_added = true;
   const send = (event, detail) => {
-    try { chrome.runtime.sendMessage({ t: "EVENT_LOG", event, detail, url: location.href }); } catch {}
+    try { chrome.runtime.sendMessage({ t: "EVENT_LOG", event, detail, url: location.href }); } catch { }
   };
   document.addEventListener("click", (e) => {
     try {
       const t = e.target;
       const tag = t && t.tagName ? t.tagName.toLowerCase() : "";
-      const text = (t && (t.innerText || t.textContent) ? (t.innerText || t.textContent).trim().slice(0,120) : "");
+      const text = (t && (t.innerText || t.textContent) ? (t.innerText || t.textContent).trim().slice(0, 120) : "");
       const label = t ? labelForEx(t) : "";
       send("click", { tag, text, label });
-    } catch {}
+    } catch { }
   }, true);
   document.addEventListener("input", (e) => {
     try {
@@ -45,10 +45,10 @@ if (!window.__heybro_event_logger_added) {
       const tag = t && t.tagName ? t.tagName.toLowerCase() : "";
       const valuePreview = t && typeof t.value === "string" ? t.value.slice(0, 30) : "";
       send("input", { tag, valuePreview });
-    } catch {}
+    } catch { }
   }, true);
   window.addEventListener("scroll", () => {
-    try { send("scroll", { y: window.scrollY }); } catch {}
+    try { send("scroll", { y: window.scrollY }); } catch { }
   }, { passive: true });
 }
 
@@ -94,12 +94,12 @@ function stableKey(sig) {
   const t = (sig && sig.tag) ? String(sig.tag).toLowerCase() : "";
   const r = (sig && sig.role) ? String(sig.role).toLowerCase() : "";
   const i = (sig && sig.id) ? String(sig.id).toLowerCase() : "";
-  const x = (sig && sig.text) ? String(sig.text).toLowerCase().slice(0,120) : "";
-  const l = (sig && sig.label) ? String(sig.label).toLowerCase().slice(0,120) : "";
+  const x = (sig && sig.text) ? String(sig.text).toLowerCase().slice(0, 120) : "";
+  const l = (sig && sig.label) ? String(sig.label).toLowerCase().slice(0, 120) : "";
   const h = (sig && sig.href) ? String(sig.href).toLowerCase() : "";
   const p = (sig && sig.placeholder) ? String(sig.placeholder).toLowerCase() : "";
   const d = (sig && sig.testid) ? String(sig.testid).toLowerCase() : "";
-  return [t,r,i,x,l,h,p,d].join("|#|");
+  return [t, r, i, x, l, h, p, d].join("|#|");
 }
 
 function roleFor(el) {
@@ -120,7 +120,7 @@ function annotateBadge(el, id) {
   b.style.cssText = `
     position: fixed; left: ${Math.max(0, r.left)}px; top: ${Math.max(0, r.top)}px;
     background: #111; color: #fff; font-size: 12px; padding: 2px 4px;
-    border-radius: 4px; z-index: 2147483647; pointer-events: none;
+    border-radius: 4px; z-index: 2147483647; pointer-events: none; box-shadow: 0 0 2px #fff;
   `;
   b.dataset.agentId = String(id);
   document.body.appendChild(b);
@@ -203,7 +203,7 @@ function walk(root, out) {
         try {
           const doc = el.contentDocument || el.contentWindow?.document;
           if (doc && doc.documentElement) stack.push(doc.documentElement);
-        } catch {}
+        } catch { }
       }
     }
     const children = node.children || node.childNodes;
@@ -255,7 +255,7 @@ function simplify(annotate) {
 }
 
 function inFooter(el) {
-  return !!(el.closest("footer") || el.closest("[role=contentinfo]") || 
+  return !!(el.closest("footer") || el.closest("[role=contentinfo]") ||
     el.closest("#footer") || el.closest(".footer"));
 }
 
@@ -424,7 +424,7 @@ function stripTrackingParams(u) {
     if (!s) return "";
     const url = s.match(/^[a-zA-Z][a-zA-Z0-9]*:/) ? new URL(s) : new URL(s, location.href);
     const qs = new URLSearchParams(url.search);
-    const keys = ["utm_source","utm_medium","utm_campaign","utm_term","utm_content","gclid","fbclid","yclid","mc_eid","igshid","si","spm","ref","affid"];
+    const keys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid", "yclid", "mc_eid", "igshid", "si", "spm", "ref", "affid"];
     for (const k of keys) qs.delete(k);
     url.search = qs.toString() ? "?" + qs.toString() : "";
     return url.toString();
@@ -436,7 +436,7 @@ function stripTrackingParams(u) {
 function isAdOrTrackerHref(u) {
   const h = hostFromUrl(u);
   if (!h) return false;
-  const blocked = new Set(["aax-eu-zaz.amazon.in","googleads.g.doubleclick.net","adservice.google.com","pagead2.googlesyndication.com","adclick.g.doubleclick.net"]);
+  const blocked = new Set(["aax-eu-zaz.amazon.in", "googleads.g.doubleclick.net", "adservice.google.com", "pagead2.googlesyndication.com", "adclick.g.doubleclick.net"]);
   return blocked.has(h);
 }
 
@@ -518,9 +518,9 @@ function findTarget(payload) {
       }
       if (sig.testid) {
         const e2 = document.querySelector(`[data-testid="${sig.testid}"]`) ||
-                   document.querySelector(`[data-test="${sig.testid}"]`) ||
-                   document.querySelector(`[data-qa="${sig.testid}"]`) ||
-                   document.querySelector(`[data-automation="${sig.testid}"]`);
+          document.querySelector(`[data-test="${sig.testid}"]`) ||
+          document.querySelector(`[data-qa="${sig.testid}"]`) ||
+          document.querySelector(`[data-automation="${sig.testid}"]`);
         if (e2 && isRenderable(e2)) {
           if (viewportOnly) {
             const r = e2.getBoundingClientRect();
@@ -591,15 +591,15 @@ function findTarget(payload) {
     const remapId = state.sigIndex.get(key);
     if (remapId) {
       const re = getById(remapId);
-        if (re && isRenderable(re)) {
-          if (viewportOnly) {
-            const r = re.getBoundingClientRect();
-            const inViewport = r.width > 0 && r.height > 0 && r.bottom >= 0 && r.top <= window.innerHeight && r.right >= 0 && r.left <= window.innerWidth;
-            if (!inViewport) return null;
-          }
-          return re;
+      if (re && isRenderable(re)) {
+        if (viewportOnly) {
+          const r = re.getBoundingClientRect();
+          const inViewport = r.width > 0 && r.height > 0 && r.bottom >= 0 && r.top <= window.innerHeight && r.right >= 0 && r.left <= window.innerWidth;
+          if (!inViewport) return null;
         }
+        return re;
       }
+    }
     // Try direct selectors first
     if (sigPayload.id) {
       const e1 = document.getElementById(sigPayload.id);
@@ -607,9 +607,9 @@ function findTarget(payload) {
     }
     if (sigPayload.testid) {
       const e2 = document.querySelector(`[data-testid="${sigPayload.testid}"]`) ||
-                 document.querySelector(`[data-test="${sigPayload.testid}"]`) ||
-                 document.querySelector(`[data-qa="${sigPayload.testid}"]`) ||
-                 document.querySelector(`[data-automation="${sigPayload.testid}"]`);
+        document.querySelector(`[data-test="${sigPayload.testid}"]`) ||
+        document.querySelector(`[data-qa="${sigPayload.testid}"]`) ||
+        document.querySelector(`[data-automation="${sigPayload.testid}"]`);
       if (e2 && isRenderable(e2)) return e2;
     }
     if (sigPayload.href) {
@@ -774,47 +774,47 @@ function findTarget(payload) {
 }
 
 function findInputElement(el, payload) {
-  if (el && (el.isContentEditable || 
-      (el.tagName && ["input", "textarea"].includes(el.tagName.toLowerCase())))) {
+  if (el && (el.isContentEditable ||
+    (el.tagName && ["input", "textarea"].includes(el.tagName.toLowerCase())))) {
     return el;
   }
-  
+
   if (el) {
     const forId = el.getAttribute && el.getAttribute("for");
     if (forId) {
       const byFor = document.getElementById(forId);
       if (byFor) return byFor;
     }
-    
+
     const within = el.querySelector && el.querySelector("input,textarea,[contenteditable='true']");
     if (within) return within;
   }
-  
+
   if (payload && payload.text) {
     const label = String(payload.text).toLowerCase();
     const candidates = Array.from(document.querySelectorAll("input,textarea,[contenteditable='true']"));
     for (const cand of candidates) {
-      const s = ((cand.getAttribute("placeholder") || "") + " " + 
+      const s = ((cand.getAttribute("placeholder") || "") + " " +
         (cand.getAttribute("aria-label") || "") + " " + labelForEx(cand)).toLowerCase();
       if (s.includes(label)) return cand;
     }
   }
-  
+
   return el;
 }
 
 async function execute(payload) {
   const a = payload.action;
   const behavior = state.experimental ? "smooth" : "auto";
-  
+
   if (a === "new_tab") {
     const u = payload.value || payload.url;
     if (u && isTopWindow()) {
-      try { chrome.runtime.sendMessage({ action: "OPEN_NEW_TAB", url: u }); } catch {}
+      try { chrome.runtime.sendMessage({ action: "OPEN_NEW_TAB", url: u }); } catch { }
     }
     return { ok: true };
   }
-  
+
   if (a === "scroll") {
     const behavior = payload.behavior || (state.experimental ? "smooth" : "auto");
     const to = payload.to;
@@ -832,9 +832,9 @@ async function execute(payload) {
 
       // Check if element is visible in viewport
       const isVisible = rect.top >= 0 &&
-                       rect.left >= 0 &&
-                       rect.bottom <= windowHeight &&
-                       rect.right <= windowWidth;
+        rect.left >= 0 &&
+        rect.bottom <= windowHeight &&
+        rect.right <= windowWidth;
 
       return { visible: isVisible, rect: { top: rect.top, left: rect.left, bottom: rect.bottom, right: rect.right } };
     }
@@ -912,9 +912,9 @@ async function execute(payload) {
     window.scrollBy({ top: window.innerHeight * 0.8, left: 0, behavior });
     return { ok: true };
   }
-  
+
   let el = findTarget(payload);
-  
+
   if (a === "click") {
     if (!el) return { ok: false, error: "Element not found" };
 
@@ -948,9 +948,9 @@ async function execute(payload) {
 
       // Check if element is in viewport
       const isInViewport = bbox.top >= 0 &&
-                          bbox.left >= 0 &&
-                          bbox.bottom <= window.innerHeight &&
-                          bbox.right <= window.innerWidth;
+        bbox.left >= 0 &&
+        bbox.bottom <= window.innerHeight &&
+        bbox.right <= window.innerWidth;
 
       // Scroll element into view if needed
       if (!isInViewport) {
@@ -1032,7 +1032,7 @@ async function execute(payload) {
       }
 
       // Store event for testing
-      try { window.__hb_last_event = "clicked"; } catch {}
+      try { window.__hb_last_event = "clicked"; } catch { }
 
       return {
         ok: true,
@@ -1047,12 +1047,12 @@ async function execute(payload) {
       try {
         useEl.click();
         return { ok: true, clicked: true, method: "force" };
-      } catch {}
+      } catch { }
 
       return { ok: false, error: error.message };
     }
   }
-  
+
   if (a === "type") {
     // Enhanced input element detection
     if (!el) {
@@ -1111,7 +1111,7 @@ async function execute(payload) {
             try {
               document.execCommand && document.execCommand("selectAll", false, null);
               document.execCommand && document.execCommand("delete", false, null);
-            } catch {}
+            } catch { }
           } else {
             el.value = "";
           }
@@ -1186,8 +1186,8 @@ async function execute(payload) {
       return { ok: false, error: error.message };
     }
   }
-  
-  
+
+
   if (a === "select") {
     // Enhanced element finding
     if (!el) {
@@ -1305,8 +1305,8 @@ async function execute(payload) {
       totalOptions: el.options.length
     };
   }
-  
-  
+
+
   if (a === "check") {
     // Enhanced element finding for checkboxes and radio buttons
     if (!el) {
@@ -1422,7 +1422,7 @@ async function execute(payload) {
       groupSize: isRadio && el.name ? document.querySelectorAll(`input[type="radio"][name="${el.name}"]`).length : 1
     };
   }
-  
+
   if (a === "navigate") {
     const method = payload.method || "auto";
 
@@ -1492,7 +1492,7 @@ async function execute(payload) {
       return { ok: true, action: "element_click" };
     }
   }
-  
+
   // Enhanced focus action
   if (a === "focus") {
     if (!el) return { ok: false, error: "No element found to focus" };
@@ -1551,7 +1551,7 @@ async function execute(payload) {
         }
       }
 
-      try { window.__hb_submitted = "true"; } catch {}
+      try { window.__hb_submitted = "true"; } catch { }
       return { ok: true, method };
     } catch (error) {
       return { ok: false, error: error.message };
@@ -1582,16 +1582,20 @@ async function execute(payload) {
       };
 
       const code = key === "Enter" ? "Enter" : key;
-      const keydownEvent = new KeyboardEvent("keydown", { key, code, bubbles: true, cancelable: true, ...mods });
-      const keypressEvent = new KeyboardEvent("keypress", { key, code, bubbles: true, cancelable: true, ...mods });
-      const keyupEvent = new KeyboardEvent("keyup", { key, code, bubbles: true, cancelable: true, ...mods });
+      const keyEventInit = { key, code, bubbles: true, cancelable: true, ...mods, view: window };
 
-      target.dispatchEvent(keydownEvent);
-      target.dispatchEvent(keypressEvent);
-      target.dispatchEvent(keyupEvent);
+      // Helper to dispatch with legacy properties
+      const dispatchKey = (type) => {
+        const e = new KeyboardEvent(type, keyEventInit);
+        // Try to define legacy properties if possible
+        try { Object.defineProperty(e, 'keyCode', { get: () => key === "Enter" ? 13 : 0 }); } catch { }
+        try { Object.defineProperty(e, 'which', { get: () => key === "Enter" ? 13 : 0 }); } catch { }
+        target.dispatchEvent(e);
+      };
 
-      document.dispatchEvent(keydownEvent);
-      document.dispatchEvent(keyupEvent);
+      dispatchKey("keydown");
+      dispatchKey("keypress");
+      dispatchKey("keyup");
 
       let submitted = false;
       if (String(key).toLowerCase() === "enter") {
@@ -1617,7 +1621,7 @@ async function execute(payload) {
         }
       }
 
-      try { window.__hb_last_key = key; } catch {}
+      try { window.__hb_last_key = key; } catch { }
       return { ok: true, key, modifiers, submitted };
     } catch (error) {
       return { ok: false, error: error.message };
@@ -1821,7 +1825,7 @@ function fallbackCopy(text) {
   document.body.appendChild(ta);
   ta.focus();
   ta.select();
-  try { document.execCommand("copy"); } catch {}
+  try { document.execCommand("copy"); } catch { }
   document.body.removeChild(ta);
 }
 
@@ -1954,7 +1958,7 @@ function handlePaste(payload, sendResponse) {
           append,
           simulate,
           targetType: target.isContentEditable ? "contentEditable" :
-                     (target.tagName ? target.tagName.toLowerCase() : "unknown")
+            (target.tagName ? target.tagName.toLowerCase() : "unknown")
         });
 
       } catch (error) {
@@ -1984,144 +1988,144 @@ function handlePaste(payload, sendResponse) {
 if (!window.__heybro_listener_added) {
   window.__heybro_listener_added = true;
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (!msg || !msg.t) return;
-  
-  if (msg.t === "ping") {
-    sendResponse({ ok: true });
-    return;
-  }
-  
-  if (msg.t === "getPageState") {
-    sendResponse({ state: getPageState() });
-    return;
-  }
-  
-  if (msg.t === "getTestState") {
-    const out = {};
-    try {
-      out.name = document.getElementById("name")?.value || "";
-      out.agree = !!document.getElementById("agree")?.checked;
-      out.opt = document.getElementById("opt")?.value || "";
-      out.lastEvent = document.getElementById("lastEvent")?.textContent || window.__hb_last_event || "";
-      out.lastKey = document.getElementById("lastKey")?.textContent || window.__hb_last_key || "";
-      out.submitted = document.getElementById("submitted")?.textContent || window.__hb_submitted || "";
-      out.scrollY = scrollY;
-    } catch {}
-    sendResponse({ state: out });
-    return;
-  }
+    if (!msg || !msg.t) return;
 
-  if (msg.t === "getFormState") {
-    sendResponse({ state: getFormState() });
-    return;
-  }
-  
-  if (msg.t === "probe") {
-    const p = msg.payload || {};
-    if (p && p.domStableMs) {
-      const ms = Number(p.domStableMs) || 500;
-      let last = Date.now();
-      const obs = new MutationObserver(() => { last = Date.now(); });
-      obs.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
-      const check = () => {
-        if (Date.now() - last >= ms) {
-          obs.disconnect();
-          const el = findTarget(p);
-          let ok = !!el || (!p.selector && !p.text);
-          if (ok && p.visible) ok = el ? isVisible(el) : ok;
-          if (ok && p.clickable) ok = el ? isClickable(el) : ok;
-          if (ok && p.attribute && p.attribute.name) {
-            const v = el ? el.getAttribute(p.attribute.name) : null;
-            ok = v != null;
-            if (ok && p.attribute.value) ok = String(v).toLowerCase().includes(String(p.attribute.value).toLowerCase());
+    if (msg.t === "ping") {
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (msg.t === "getPageState") {
+      sendResponse({ state: getPageState() });
+      return;
+    }
+
+    if (msg.t === "getTestState") {
+      const out = {};
+      try {
+        out.name = document.getElementById("name")?.value || "";
+        out.agree = !!document.getElementById("agree")?.checked;
+        out.opt = document.getElementById("opt")?.value || "";
+        out.lastEvent = document.getElementById("lastEvent")?.textContent || window.__hb_last_event || "";
+        out.lastKey = document.getElementById("lastKey")?.textContent || window.__hb_last_key || "";
+        out.submitted = document.getElementById("submitted")?.textContent || window.__hb_submitted || "";
+        out.scrollY = scrollY;
+      } catch { }
+      sendResponse({ state: out });
+      return;
+    }
+
+    if (msg.t === "getFormState") {
+      sendResponse({ state: getFormState() });
+      return;
+    }
+
+    if (msg.t === "probe") {
+      const p = msg.payload || {};
+      if (p && p.domStableMs) {
+        const ms = Number(p.domStableMs) || 500;
+        let last = Date.now();
+        const obs = new MutationObserver(() => { last = Date.now(); });
+        obs.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
+        const check = () => {
+          if (Date.now() - last >= ms) {
+            obs.disconnect();
+            const el = findTarget(p);
+            let ok = !!el || (!p.selector && !p.text);
+            if (ok && p.visible) ok = el ? isVisible(el) : ok;
+            if (ok && p.clickable) ok = el ? isClickable(el) : ok;
+            if (ok && p.attribute && p.attribute.name) {
+              const v = el ? el.getAttribute(p.attribute.name) : null;
+              ok = v != null;
+              if (ok && p.attribute.value) ok = String(v).toLowerCase().includes(String(p.attribute.value).toLowerCase());
+            }
+            if (ok && p.textIncludes) {
+              const t = el ? ((el.innerText || el.textContent || "")) : "";
+              ok = String(t).toLowerCase().includes(String(p.textIncludes).toLowerCase());
+            }
+            sendResponse({ ok });
+          } else {
+            setTimeout(check, 100);
           }
-          if (ok && p.textIncludes) {
-            const t = el ? ((el.innerText || el.textContent || "")) : "";
-            ok = String(t).toLowerCase().includes(String(p.textIncludes).toLowerCase());
-          }
-          sendResponse({ ok });
-        } else {
-          setTimeout(check, 100);
-        }
-      };
-      setTimeout(check, 100);
-      return true;
-    }
-    const el = findTarget(p);
-    let ok = !!el || (!p.selector && !p.text);
-    if (ok && p.visible) ok = el ? isVisible(el) : ok;
-    if (ok && p.clickable) ok = el ? isClickable(el) : ok;
-    if (ok && p.attribute && p.attribute.name) {
-      const v = el ? el.getAttribute(p.attribute.name) : null;
-      ok = v != null;
-      if (ok && p.attribute.value) ok = String(v).toLowerCase().includes(String(p.attribute.value).toLowerCase());
-    }
-    if (ok && p.textIncludes) {
-      const t = el ? ((el.innerText || el.textContent || "")) : "";
-      ok = String(t).toLowerCase().includes(String(p.textIncludes).toLowerCase());
-    }
-    sendResponse({ ok });
-    return;
-  }
-  
-  if (msg.t === "simplify") {
-    sendResponse({ elements: simplify(!!msg.annotate) });
-    return;
-  }
-  
-  if (msg.t === "execute") {
-    const p = msg.payload || {};
-    
-    if (p.action === "new_tab") {
-      const u = p.value || p.url;
-      if (u && isTopWindow()) {
-        chrome.runtime.sendMessage({ action: "OPEN_NEW_TAB", url: u }, (resp) => {
-          sendResponse({ ok: true, newTabId: resp?.newTabId });
-        });
+        };
+        setTimeout(check, 100);
         return true;
       }
+      const el = findTarget(p);
+      let ok = !!el || (!p.selector && !p.text);
+      if (ok && p.visible) ok = el ? isVisible(el) : ok;
+      if (ok && p.clickable) ok = el ? isClickable(el) : ok;
+      if (ok && p.attribute && p.attribute.name) {
+        const v = el ? el.getAttribute(p.attribute.name) : null;
+        ok = v != null;
+        if (ok && p.attribute.value) ok = String(v).toLowerCase().includes(String(p.attribute.value).toLowerCase());
+      }
+      if (ok && p.textIncludes) {
+        const t = el ? ((el.innerText || el.textContent || "")) : "";
+        ok = String(t).toLowerCase().includes(String(p.textIncludes).toLowerCase());
+      }
+      sendResponse({ ok });
+      return;
     }
-    
-    if (p.action === "copy") {
-      handleCopy(p, sendResponse);
+
+    if (msg.t === "simplify") {
+      sendResponse({ elements: simplify(!!msg.annotate) });
+      return;
+    }
+
+    if (msg.t === "execute") {
+      const p = msg.payload || {};
+
+      if (p.action === "new_tab") {
+        const u = p.value || p.url;
+        if (u && isTopWindow()) {
+          chrome.runtime.sendMessage({ action: "OPEN_NEW_TAB", url: u }, (resp) => {
+            sendResponse({ ok: true, newTabId: resp?.newTabId });
+          });
+          return true;
+        }
+      }
+
+      if (p.action === "copy") {
+        handleCopy(p, sendResponse);
+        return true;
+      }
+
+      if (p.action === "paste") {
+        handlePaste(p, sendResponse);
+        return true;
+      }
+
+      execute(p).then(r => sendResponse(r)).catch(e => sendResponse({ ok: false, error: e.message }));
       return true;
     }
-    
-    if (p.action === "paste") {
-      handlePaste(p, sendResponse);
-      return true;
+
+    if (msg.t === "clear") {
+      clearBadges();
+      sendResponse({ ok: true });
+      return;
     }
-    
-    execute(p).then(r => sendResponse(r)).catch(e => sendResponse({ ok: false, error: e.message }));
-    return true;
-  }
-  
-  if (msg.t === "clear") {
-    clearBadges();
-    sendResponse({ ok: true });
-    return;
-  }
-  
-  if (msg.t === "working") {
-    sendResponse({ ok: true });
-    return;
-  }
-  
-  if (msg.t === "setMode") {
-    state.experimental = !!msg.experimental;
-    sendResponse({ ok: true });
-    return;
-  }
-  
-  if (msg.t === "mapGlobal") {
-    sendResponse({ elements: mapGlobal() });
-    return;
-  }
-  
-  if (msg.t === "mapCompact") {
-    sendResponse({ elements: mapCompact() });
-    return;
-  }
+
+    if (msg.t === "working") {
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (msg.t === "setMode") {
+      state.experimental = !!msg.experimental;
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (msg.t === "mapGlobal") {
+      sendResponse({ elements: mapGlobal() });
+      return;
+    }
+
+    if (msg.t === "mapCompact") {
+      sendResponse({ elements: mapCompact() });
+      return;
+    }
   });
 }
 

@@ -295,13 +295,51 @@
 
     .header-btn:hover {
       color: var(--text);
+      background: #27272a;
+      border-radius: 6px;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover {
+      color: var(--text);
+      background: #27272a;
+    }
+
+    #task-drawer {
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
     }
   </style>
 </head>
 
 <body>
 
-  <button class="header-btn" id="settings-btn">
+  <button class="header-btn" id="task-list-btn" title="Task List" style="right: 70px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="8" y1="6" x2="21" y2="6"></line>
+      <line x1="8" y1="12" x2="21" y2="12"></line>
+      <line x1="8" y1="18" x2="21" y2="18"></line>
+      <line x1="3" y1="6" x2="3.01" y2="6"></line>
+      <line x1="3" y1="12" x2="3.01" y2="12"></line>
+      <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    </svg>
+  </button>
+  <button class="header-btn" id="new-task-btn" title="New Task" style="right: 40px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  </button>
+  <button class="header-btn" id="settings-btn" title="Settings">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="3" />
       <path
@@ -326,8 +364,27 @@
     </div>
   </div>
 
+  <div id="task-drawer"
+    style="position:fixed;top:0;left:0;bottom:0;width:250px;background:#18181b;border-right:1px solid #27272a;z-index:200;transform:translateX(-100%);transition:transform 0.2s;display:flex;flex-direction:column;">
+    <div
+      style="padding:16px;border-bottom:1px solid #27272a;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:600;">Tasks</span>
+      <button class="btn-icon" id="close-drawer">✕</button>
+    </div>
+    <div id="task-list" style="flex:1;overflow-y:auto;padding:8px;">
+      <!-- Tasks injected here -->
+    </div>
+    <div style="padding:16px;border-top:1px solid #27272a;">
+      <button class="btn" id="drawer-new-task">New Task</button>
+    </div>
+  </div>
+
   <div id="settings-modal">
     <div class="modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;font-size:16px;">Settings</h3>
+        <button class="btn-icon" id="close-settings">✕</button>
+      </div>
       <div class="form-group">
         <label>Gemini API Key</label>
         <input type="password" id="gemini-key" placeholder="Enter API Key">
