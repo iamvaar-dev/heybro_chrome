@@ -1,6 +1,0 @@
-Add Tesseract assets here:
- - tesseract.min.js
- - tesseract.worker.min.js
- - tesseract-core.wasm
- - lang/eng.traineddata.gz
-These files will be loaded via chrome.runtime.getURL(...) by sidepanel.js.

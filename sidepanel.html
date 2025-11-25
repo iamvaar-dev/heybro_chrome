@@ -225,7 +225,8 @@
     }
 
     /* Settings Modal */
-    #settings-modal {
+    #settings-modal,
+    #log-modal {
       position: fixed;
       top: 0;
       left: 0;
@@ -239,7 +240,8 @@
       justify-content: center;
     }
 
-    #settings-modal.visible {
+    #settings-modal.visible,
+    #log-modal.visible {
       display: flex;
     }
 
@@ -324,6 +326,13 @@
 
 <body>
 
+  <button class="header-btn" id="show-logs-btn" title="System Logs" style="right: 100px;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="16" x2="12" y2="12"></line>
+      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+  </button>
   <button class="header-btn" id="task-list-btn" title="Task List" style="right: 70px;">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -401,6 +410,23 @@
         </select>
       </div>
       <button class="btn" id="save-settings">Save</button>
+    </div>
+  </div>
+
+  <div id="log-modal">
+    <div class="modal-content"
+      style="max-width: 600px; width: 95%; height: 80vh; display: flex; flex-direction: column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px; flex-shrink: 0;">
+        <h3 style="margin:0;font-size:16px;">System Logs</h3>
+        <button class="btn-icon" id="close-logs">✕</button>
+      </div>
+      <div id="log-content"
+        style="flex: 1; overflow-y: auto; background: #111; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; white-space: pre-wrap; margin-bottom: 10px; border: 1px solid #333;">
+      </div>
+      <div style="display: flex; gap: 10px; flex-shrink: 0;">
+        <button class="btn" id="copy-logs" style="flex: 1;">Copy Logs</button>
+        <button class="btn" id="clear-logs" style="background: #3f3f46; flex: 1;">Clear</button>
+      </div>
     </div>
   </div>
 
