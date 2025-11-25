@@ -999,13 +999,17 @@ async function execute(payload) {
       };
 
       // Dispatch mouse event sequence
+      // Dispatch mouse/pointer event sequence
       useEl.dispatchEvent(new MouseEvent("mouseenter", eventOpts));
+      useEl.dispatchEvent(new PointerEvent("pointerenter", eventOpts));
       await new Promise(resolve => setTimeout(resolve, 10));
 
       useEl.dispatchEvent(new MouseEvent("mousedown", eventOpts));
+      useEl.dispatchEvent(new PointerEvent("pointerdown", eventOpts));
       await new Promise(resolve => setTimeout(resolve, 10));
 
       useEl.dispatchEvent(new MouseEvent("mouseup", eventOpts));
+      useEl.dispatchEvent(new PointerEvent("pointerup", eventOpts));
       await new Promise(resolve => setTimeout(resolve, 10));
 
       // Adjust target if overlay intercepts the click

@@ -1,6 +1,6 @@
 
-import { initSettingsUI, initMenu, startLogStreaming, getEls, setRunning, logToUI } from './lib/ui.js';
-import { loadSettings } from './lib/state.js';
+import { initSettingsUI, initMenu, startLogStreaming, getEls, setRunning, logToUI, stopStreaming, streamText } from './lib/ui.js';
+import { loadSettings, state } from './lib/state.js';
 import { startAutoRun } from './lib/agent.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -15,8 +15,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     els.sendBtn.addEventListener("click", async () => {
       const running = document.body.classList.contains("running");
       if (running) {
-        // Stop logic is handled via state.autoStop in agent loop
-        // But we can force UI update here
+        state.autoStop = true;
+        stopStreaming();
+        streamText("\nStopped in middle.\n");
         logToUI("Stopping...");
         await setRunning(false);
         return;
@@ -31,6 +32,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         const running = document.body.classList.contains("running");
         if (running) {
+          state.autoStop = true;
+          stopStreaming();
+          streamText("\nStopped in middle.\n");
           logToUI("Stopping...");
           await setRunning(false);
         } else {
