@@ -21,7 +21,9 @@
     "clipboardWrite",
     "debugger"
   ],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -31,14 +33,17 @@
   },
   "action": {
     "default_title": "Heybro"
-  }
-  ,
-  "web_accessible_resources": [{
-    "resources": [
-      "vendor/*"
-    ],
-    "matches": ["<all_urls>"]
-  }],
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "vendor/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; worker-src 'self'"
   }
