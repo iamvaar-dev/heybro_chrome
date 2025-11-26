@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (running) {
         state.autoStop = true;
         stopStreaming();
-        streamText("\nStopped in middle.\n");
-        logToUI("Stopping...");
+        // streamText("\nStopped in middle.\n"); // Deprecated
+        import('./lib/ui.js').then(m => m.showStopped("Stopped manually"));
         await setRunning(false);
         return;
       }
@@ -34,8 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (running) {
           state.autoStop = true;
           stopStreaming();
-          streamText("\nStopped in middle.\n");
-          logToUI("Stopping...");
+          import('./lib/ui.js').then(m => m.showStopped("Stopped manually"));
           await setRunning(false);
         } else {
           await startAutoRun();

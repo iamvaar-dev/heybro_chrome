@@ -210,11 +210,28 @@ const InteractionEngine = {
         await this.scrollIntoView(el);
 
         if (!force && VisualCheck.isObscured(el)) {
-            // Try to remove overlays or warn? For now, we just log and try to click anyway if force is false
-            // But if it's obscured, a normal user click would hit the overlay.
-            // We'll try to dispatch events directly to the element (which bypasses overlays in JS), 
-            // effectively "forcing" it, but we simulate the sequence.
             console.warn("Element appears obscured, attempting direct dispatch");
+        }
+
+        // Analyze the element to predict behavior
+        const linkInfo = this.analyzeLinkBehavior(el);
+
+        // Store link info for the tap function to use
+        if (linkInfo.willOpenNewTab) {
+            window.__hb_expecting_new_tab = {
+                href: linkInfo.href,
+                timestamp: Date.now(),
+                elementInfo: {
+                    tag: el.tagName,
+                    id: el.id,
+                    text: (el.textContent || '').slice(0, 50)
+                }
+            };
+
+            // Clear after 3 seconds
+            setTimeout(() => {
+                delete window.__hb_expecting_new_tab;
+            }, 3000);
         }
 
         const rect = el.getBoundingClientRect();
@@ -247,35 +264,120 @@ const InteractionEngine = {
         return true;
     },
 
+    analyzeLinkBehavior(el) {
+        // Analyze element to predict if it will open a new tab
+        const info = {
+            href: null,
+            willOpenNewTab: false,
+            hasTarget: false,
+            targetValue: null,
+            hasOnClick: false
+        };
+
+        // Check if it's a link or has a click handler
+        const isLink = el.tagName?.toLowerCase() === 'a';
+        const href = el.href || el.getAttribute('href');
+        const target = el.target || el.getAttribute('target');
+        const hasOnClick = el.onclick || el.getAttribute('onclick');
+
+        info.href = href;
+        info.hasTarget = !!target;
+        info.targetValue = target;
+        info.hasOnClick = !!hasOnClick;
+
+        // Predict new tab opening
+        if (isLink && target && (target === '_blank' || target === '_new')) {
+            info.willOpenNewTab = true;
+        }
+
+        // Check parent elements for target
+        let parent = el.parentElement;
+        while (parent && !info.willOpenNewTab) {
+            const parentTarget = parent.target || parent.getAttribute('target');
+            if (parent.tagName?.toLowerCase() === 'a' && parentTarget && (parentTarget === '_blank' || parentTarget === '_new')) {
+                info.willOpenNewTab = true;
+                if (!info.href) {
+                    info.href = parent.href || parent.getAttribute('href');
+                }
+            }
+            parent = parent.parentElement;
+        }
+
+        return info;
+    },
+
     async type(el, value, append = false) {
         await this.scrollIntoView(el);
         el.focus();
 
-        // 1. React/Vue State Hack
-        // Frameworks override the property setter, so we need to call the native one
-        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-        const nativeTextAreaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+        const isContentEditable = el.isContentEditable || el.contentEditable === 'true';
 
-        const setter = el.tagName === 'TEXTAREA' ? nativeTextAreaSetter : nativeInputValueSetter;
+        if (isContentEditable) {
+            // Handle contenteditable divs (like Gmail compose)
+            const newValue = append ? (el.textContent || el.innerText || '') + value : value;
 
-        const newValue = append ? el.value + value : value;
+            // Clear existing content if not appending
+            if (!append) {
+                el.textContent = '';
+            }
 
-        if (setter) {
-            setter.call(el, newValue);
+            // Insert text at cursor position or append
+            const selection = window.getSelection();
+            const range = document.createRange();
+
+            if (el.childNodes.length > 0) {
+                range.selectNodeContents(el);
+                range.collapse(false); // Move to end
+            } else {
+                range.setStart(el, 0);
+                range.collapse(true);
+            }
+
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            // Insert text
+            document.execCommand('insertText', false, value);
+
+            // Dispatch events for frameworks
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+
+            return (el.textContent || el.innerText || '').length;
         } else {
-            el.value = newValue;
+            // Handle standard input/textarea elements
+            const tagName = el.tagName?.toLowerCase();
+            let setter;
+
+            try {
+                if (tagName === 'textarea') {
+                    setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                } else if (tagName === 'input') {
+                    setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+                }
+            } catch (e) {
+                // Descriptor access failed, fall back to direct assignment
+                setter = null;
+            }
+
+            const newValue = append ? (el.value || '') + value : value;
+
+            if (setter) {
+                setter.call(el, newValue);
+            } else {
+                el.value = newValue;
+            }
+
+            // Dispatch events
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Simulate keypresses
+            el.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+            el.dispatchEvent(new KeyboardEvent('keyup', { key: 'End', bubbles: true }));
+
+            return newValue.length;
         }
-
-        // 2. Dispatch Events to trigger framework listeners
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-
-        // 3. Simulate keypresses for "live" validation
-        // We don't type every char for speed, but we do end sequence
-        el.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
-        el.dispatchEvent(new KeyboardEvent('keyup', { key: 'End', bubbles: true }));
-
-        return newValue.length;
     }
 };
 
@@ -563,8 +665,17 @@ if (!window.__heybro_listener_added) {
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (msg.t === "ping") { sendResponse({ ok: true }); return; }
         if (msg.t === "execute") {
-            execute(msg.payload).then(sendResponse).catch(e => sendResponse({ ok: false, error: e.message }));
+            execute(msg.payload).then(res => sendResponse(res)).catch(e => sendResponse({ ok: false, error: e.message }));
             return true;
+        }
+        if (msg.t === "evaluate") {
+            try {
+                const result = eval(msg.code);
+                sendResponse({ ok: true, result });
+            } catch (e) {
+                sendResponse({ ok: false, error: e.message });
+            }
+            return;
         }
         if (msg.t === "simplify") {
             try {

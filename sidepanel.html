@@ -13,8 +13,18 @@
       --accent: #3b82f6;
       --success: #10b981;
       --error: #ef4444;
+      --input-bg: #18181b;
+      --border: #27272a;
       --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    :root[data-theme="light"] {
+      --bg: #ffffff;
+      --text: #18181b;
+      --text-dim: #71717a;
+      --input-bg: #f4f4f5;
+      --border: #e4e4e7;
     }
 
     * {
@@ -45,130 +55,110 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #27272a;
+      background: var(--border);
       border-radius: 3px;
     }
 
-    /* Stream */
-    #stream {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      scroll-behavior: smooth;
-      font-family: var(--font-sans);
+    /* Active Task Header */
+    /* Moved to lower section to avoid duplicates */
+
+    .task-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
     }
 
-    .msg-user {
-      align-self: flex-end;
-      background: #27272a;
-      padding: 8px 12px;
-      border-radius: 12px 12px 2px 12px;
-      max-width: 85%;
-      margin-bottom: 8px;
+    .task-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.4;
     }
 
+    /* Steps Container (Scrollable) */
+    /* Moved to lower section to avoid duplicates */
+
+    /* Stream Items */
     .msg-agent {
       align-self: flex-start;
       max-width: 100%;
       white-space: pre-wrap;
-    }
-
-    .msg-agent p {
-      margin: 0 0 8px 0;
-    }
-
-    .msg-agent ul {
-      margin: 0 0 8px 0;
-      padding-left: 20px;
-    }
-
-    .msg-agent li {
-      margin-bottom: 4px;
-    }
-
-    /* Markdown Styles */
-    .md-bold {
-      font-weight: 600;
-      color: #fff;
-    }
-
-    .md-code {
-      font-family: var(--font-mono);
-      background: #27272a;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-
-    .md-block {
-      font-family: var(--font-mono);
       color: var(--text-dim);
-      margin: 4px 0;
-      padding-left: 12px;
-      border-left: 2px solid #27272a;
-      font-size: 12px;
+      /* Default to dim for logs */
     }
 
-    .todo-list {
-      background: #18181b;
-      border: 1px solid #27272a;
-      border-radius: 8px;
-      padding: 12px;
-      margin: 8px 0;
-      font-family: var(--font-sans);
-    }
-
-    .todo-item {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 4px;
-      align-items: flex-start;
-    }
-
-    .todo-icon {
+    /* Answer Section */
+    #answer-container {
+      padding: 20px;
+      background: var(--bg);
+      display: none;
       flex-shrink: 0;
-      width: 16px;
-      text-align: center;
+      animation: fadeIn 0.3s ease;
+      animation: fadeIn 0.3s ease;
+      /* border-top: 1px solid var(--border); Removed divider */
     }
 
-    .todo-text {
-      color: var(--text-dim);
+    #answer-container.visible {
+      display: block;
     }
 
-    .todo-text.active {
-      color: var(--text);
-      font-weight: 500;
+    #answer-container.stopped {
+      /* border-top: 1px solid #ef4444; Removed */
     }
 
-    .todo-text.done {
-      text-decoration: line-through;
-      opacity: 0.6;
-    }
-
-    /* Cursor Effect */
-    .cursor::after {
-      content: '▋';
-      display: inline-block;
-      vertical-align: baseline;
-      animation: blink 1s step-end infinite;
+    #answer-container.stopped .answer-content {
       color: var(--accent);
-      margin-left: 2px;
     }
 
-    @keyframes blink {
-      50% {
-        opacity: 0;
-      }
+    .answer-content {
+      font-size: 14px;
+      color: #fff;
+      line-height: 1.6;
+    }
+
+    /* Expand Control */
+    #expand-control {
+      padding: 10px 20px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 12px;
+      color: #71717a;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      user-select: none;
+      gap: 6px;
+      flex-shrink: 0;
+      user-select: none;
+      margin-left: 0;
+      /* Aligned left */
+    }
+
+    #expand-control:hover {
+      color: #a1a1aa;
+    }
+
+    #expand-control.visible {
+      display: flex;
+    }
+
+    #expand-control svg {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s;
+    }
+
+    #expand-control.expanded svg {
+      transform: rotate(90deg);
     }
 
     /* Input Area */
     #input-area {
       padding: 16px;
       background: var(--bg);
-      border-top: 1px solid #27272a;
       flex-shrink: 0;
     }
 
@@ -180,8 +170,8 @@
 
     textarea {
       width: 100%;
-      background: #18181b;
-      border: 1px solid #27272a;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 10px 12px;
       padding-right: 40px;
@@ -247,7 +237,7 @@
 
     .modal-content {
       background: var(--bg);
-      border: 1px solid #27272a;
+      border: 1px solid var(--border);
       border-radius: 12px;
       width: 90%;
       max-width: 320px;
@@ -268,8 +258,8 @@
     .form-group input,
     .form-group select {
       width: 100%;
-      background: #18181b;
-      border: 1px solid #27272a;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
       padding: 8px;
       border-radius: 6px;
       color: var(--text);
@@ -285,20 +275,134 @@
       color: white;
     }
 
+    /* App Header (Top Bar) */
+    #app-header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 16px 20px;
+      height: auto;
+      background: var(--bg);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-btn-group {
+      display: flex;
+      gap: 4px;
+      /* background: #fff; Removed white background */
+      padding: 4px;
+      border-radius: 6px;
+    }
+
     .header-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
+      position: static;
+      margin: 0;
       background: transparent;
       border: none;
-      color: #52525b;
+      color: var(--text);
+      /* White icons */
       cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
     }
 
     .header-btn:hover {
+      background: var(--border);
+      /* Dark hover */
+    }
+
+    /* Main Content Area (Scrollable) */
+    #main-content {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Active Task Header */
+    #active-task-header {
+      padding: 0 20px 20px 20px;
+      background: var(--bg);
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .task-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      /* Changed to accent color */
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .task-text {
+      font-size: 15px;
+      font-weight: 600;
       color: var(--text);
-      background: #27272a;
-      border-radius: 6px;
+      line-height: 1.4;
+    }
+
+    /* Steps Container */
+    #steps-container {
+      padding: 0 20px 10px 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      /* Allow it to grow */
+      min-height: 0;
+      /* Important for nested flex scroll */
+      transition: opacity 0.3s ease-in-out;
+      overflow-y: auto;
+      /* Enable scrolling */
+      /* Removed max-height transition for better scrolling support */
+    }
+
+    #steps-container.collapsed {
+      display: none;
+      /* Simple toggle for now to ensure state is clear */
+    }
+
+    /* Stream (The content with the border) */
+    #stream {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-left: 2px solid var(--accent);
+      /* Changed to accent color */
+      padding-left: 20px;
+      /* margin-left: 10px; Removed to align left */
+      height: auto;
+      /* Dynamic height */
+    }
+
+    /* Welcome Message (Initial State) */
+    #welcome-message {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      font-size: 14px;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 1;
+      transition: opacity 0.2s;
+      min-height: 200px;
+      /* Ensure it takes space */
+    }
+
+    #welcome-message.hidden {
+      display: none;
     }
 
     .btn-icon {
@@ -315,50 +419,266 @@
 
     .btn-icon:hover {
       color: var(--text);
-      background: #27272a;
+      background: var(--border);
     }
 
     #task-drawer {
       box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Markdown Styles */
+    .md-bold {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .md-code {
+      font-family: var(--font-mono);
+      background: var(--border);
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .md-block {
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      margin: 4px 0;
+      padding-left: 12px;
+      border-left: none !important;
+      /* Force remove */
+      font-size: 12px;
+    }
+
+    .todo-list {
+      background: var(--input-bg);
+      border: none !important;
+      /* Force remove */
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      font-family: var(--font-sans);
+    }
+
+    .todo-item {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+      align-items: flex-start;
+    }
+
+    .todo-icon {
+      flex-shrink: 0;
+      width: 16px;
+      text-align: center;
+    }
+
+    .todo-text {
+      color: var(--text-dim);
+    }
+
+    .todo-text.active {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .todo-text.done {
+      /* text-decoration: line-through; Removed strikethrough for cleaner look */
+      color: var(--success);
+      /* Green color for completion */
+      font-weight: 500;
+    }
+
+    .todo-icon.done {
+      color: var(--success);
+      font-weight: bold;
+      transform: scale(1.1);
+      transition: transform 0.2s ease;
+    }
+
+    /* Cursor Effect */
+    .cursor::after {
+      content: '▋';
+      display: inline-block;
+      vertical-align: baseline;
+      animation: blink 1s step-end infinite;
+      color: var(--accent);
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* Stream States */
+    #stream.collapsed {
+      display: none;
+    }
+
+    /* Duller text for logs when viewed as history */
+    #stream.history-mode .msg-agent,
+    #stream.history-mode .md-block {
+      color: #71717a;
+    }
+
+    #stream.history-mode .msg-user {
+      opacity: 0.6;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Live Task Indicator */
+    .live-task-container {
+      margin-top: 10px;
+      padding: 10px 0;
+      /* Removed horizontal padding */
+      /* Removed background and border */
+      display: flex;
+      align-items: center;
+      gap: 0;
+      /* Removed gap */
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* Removed .live-task-icon */
+
+    .live-task-text {
+      font-size: 14px;
+      /* Slightly larger */
+      font-weight: 600;
+      /* Brighter gradient: Text Dim -> Bright Accent -> Text Dim */
+      background: linear-gradient(to right, var(--text-dim) 0%, #60a5fa 50%, var(--text-dim) 100%);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: shine 1s linear infinite;
+      /* Faster animation */
+    }
+
+    /* Success Message (Completed Task) */
+    .msg-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--success);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .success-icon {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .success-text {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    @keyframes shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.7;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.95);
+        opacity: 0.7;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <button class="header-btn" id="show-logs-btn" title="System Logs" style="right: 100px;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="16" x2="12" y2="12"></line>
-      <line x1="12" y1="8" x2="12.01" y2="8"></line>
-    </svg>
-  </button>
-  <button class="header-btn" id="task-list-btn" title="Task List" style="right: 70px;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <line x1="8" y1="6" x2="21" y2="6"></line>
-      <line x1="8" y1="12" x2="21" y2="12"></line>
-      <line x1="8" y1="18" x2="21" y2="18"></line>
-      <line x1="3" y1="6" x2="3.01" y2="6"></line>
-      <line x1="3" y1="12" x2="3.01" y2="12"></line>
-      <line x1="3" y1="18" x2="3.01" y2="18"></line>
-    </svg>
-  </button>
-  <button class="header-btn" id="new-task-btn" title="New Task" style="right: 40px;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  </button>
-  <button class="header-btn" id="settings-btn" title="Settings">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="3" />
-      <path
-        d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-    </svg>
-  </button>
+  <div id="app-header">
+    <div class="header-btn-group">
+      <button class="header-btn" id="show-logs-btn" title="System Logs">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      </button>
+      <button class="header-btn" id="task-list-btn" title="Task List">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+      </button>
+      <button class="header-btn" id="new-task-btn" title="New Task">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+      <button class="header-btn" id="settings-btn" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+          </path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-  <div id="stream">
-    <div class="msg-agent">
-      Hello! I'm Heybro. Ready to help.
+  <div id="main-content">
+    <div id="welcome-message">
+      <div style="font-weight: 500; color: var(--text);">Heybro</div>
+      <div>Ready to help.</div>
+    </div>
+
+    <div id="active-task-header" style="display:none;">
+      <div class="task-label">Current Task</div>
+      <div class="task-text" id="task-text-content"></div>
+    </div>
+
+    <div id="expand-control">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+      <span id="expand-text">Steps completed</span>
+    </div>
+
+    <div id="steps-container" class="collapsed">
+      <div id="stream">
+      </div>
+    </div>
+
+    <div id="answer-container">
+      <div class="answer-content" id="answer-text"></div>
     </div>
   </div>
 
@@ -373,17 +693,21 @@
     </div>
   </div>
 
+  <div id="drawer-backdrop"
+    style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:199;display:none;backdrop-filter:blur(2px);">
+  </div>
+
   <div id="task-drawer"
-    style="position:fixed;top:0;left:0;bottom:0;width:250px;background:#18181b;border-right:1px solid #27272a;z-index:200;transform:translateX(-100%);transition:transform 0.2s;display:flex;flex-direction:column;">
+    style="position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--input-bg);border-right:1px solid var(--border);z-index:200;transform:translateX(-100%);transition:transform 0.2s;display:flex;flex-direction:column;">
     <div
-      style="padding:16px;border-bottom:1px solid #27272a;display:flex;justify-content:space-between;align-items:center;">
+      style="padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
       <span style="font-weight:600;">Tasks</span>
       <button class="btn-icon" id="close-drawer">✕</button>
     </div>
     <div id="task-list" style="flex:1;overflow-y:auto;padding:8px;">
       <!-- Tasks injected here -->
     </div>
-    <div style="padding:16px;border-top:1px solid #27272a;">
+    <div style="padding:16px;border-top:1px solid var(--border);">
       <button class="btn" id="drawer-new-task">New Task</button>
     </div>
   </div>
@@ -407,6 +731,13 @@
         <select id="mode-select">
           <option value="standard">Standard</option>
           <option value="experimental">Experimental (Better DOM)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Theme</label>
+        <select id="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
         </select>
       </div>
       <button class="btn" id="save-settings">Save</button>

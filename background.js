@@ -72,7 +72,7 @@ const stateManager = {
       tc.collectedData = { ...(tc.collectedData || {}), ...p.collectedData };
     }
     if (p.errors) {
-      tc.errors = [ ...(tc.errors || []), ...p.errors ];
+      tc.errors = [...(tc.errors || []), ...p.errors];
     }
     this.taskContext = tc;
   },
@@ -129,7 +129,7 @@ function pushLog(line) {
   const s = fmtTime(ts) + " " + String(line || "");
   interactionLogs.push(s);
   if (interactionLogs.length > 1000) interactionLogs = interactionLogs.slice(-1000);
-  try { taskMemory.logs.push(s); if (taskMemory.logs.length > 1000) taskMemory.logs = taskMemory.logs.slice(-1000); } catch {}
+  try { taskMemory.logs.push(s); if (taskMemory.logs.length > 1000) taskMemory.logs = taskMemory.logs.slice(-1000); } catch { }
 }
 
 async function getActiveTabId() {
@@ -155,12 +155,12 @@ function isInjectable(url) {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg) return;
-  
+
   if (msg.t === "getActiveTabId") {
     getActiveTabId().then(id => sendResponse({ id }));
     return true;
   }
-  
+
   if (msg.t === "GET_STATE") {
     (async () => {
       await refreshAllTabs();
@@ -169,7 +169,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     })();
     return true;
   }
-  
+
   if (msg.t === "GET_TASK_CONTEXT") {
     sendResponse({ taskContext: stateManager.taskContext });
     return false;
@@ -272,32 +272,32 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       try {
         pushLog(`Tab switched → id=${stateManager.activeTabId}`);
-      } catch {}
+      } catch { }
       sendResponse({ ok: true, activeTabId: stateManager.activeTabId });
     });
     return true;
   }
-  
+
   if (msg.action === "OPEN_NEW_TAB" && msg.url) {
     chrome.tabs.create({ url: msg.url, active: true }, async (newTab) => {
       try {
-      if (newTab?.id) {
-        stateManager.updateTab(newTab);
-        stateManager.activeTabId = newTab.id;
-        stateManager.addRelevantTab(newTab.id);
-        try { pushLog(`Tab created → ${newTab.url || ""}`); } catch {}
-        try {
-          await chrome.scripting.executeScript({
-            target: { tabId: newTab.id, allFrames: true },
-            files: ["content.js"]
-          });
-        } catch (e) {
-          // Content script injection might fail for some URLs
+        if (newTab?.id) {
+          stateManager.updateTab(newTab);
+          stateManager.activeTabId = newTab.id;
+          stateManager.addRelevantTab(newTab.id);
+          try { pushLog(`Tab created → ${newTab.url || ""}`); } catch { }
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId: newTab.id, allFrames: true },
+              files: ["content.js"]
+            });
+          } catch (e) {
+            // Content script injection might fail for some URLs
+          }
+          sendResponse({ status: "success", newTabId: newTab.id });
+        } else {
+          sendResponse({ status: "error" });
         }
-        sendResponse({ status: "success", newTabId: newTab.id });
-      } else {
-        sendResponse({ status: "error" });
-      }
       } catch (e) {
         sendResponse({ status: "error" });
       }
@@ -311,7 +311,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const entry = { timestamp: Date.now(), action: msg.action, result: msg.result, preState: msg.preState, postState: msg.postState };
       taskMemory.actions.push(entry);
       if (taskMemory.actions.length > 200) taskMemory.actions = taskMemory.actions.slice(-200);
-    } catch {}
+    } catch { }
     return false;
   }
 
@@ -324,14 +324,14 @@ chrome.runtime.onInstalled.addListener(() => {
       if (chrome.sidePanel?.setOptions) {
         await chrome.sidePanel.setOptions({ enabled: true, path: "sidepanel.html" });
       }
-    } catch {}
-    
+    } catch { }
+
     try {
       if (chrome.sidePanel?.setPanelBehavior) {
         await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
       }
-    } catch {}
-    
+    } catch { }
+
     let tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     let tab = tabs?.[0];
     await refreshAllTabs();
@@ -347,18 +347,18 @@ chrome.runtime.onInstalled.addListener(() => {
     }
 
     if (tab) stateManager.updateTab(tab);
-    
+
     try {
       if (chrome.sidePanel?.open && tab?.id) {
         await chrome.sidePanel.open({ tabId: tab.id });
       }
-    } catch {}
+    } catch { }
   })();
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
   let targetTab = tab;
-  
+
   if (!targetTab?.id || !isInjectable(targetTab.url)) {
     const all = await chrome.tabs.query({ currentWindow: true });
     for (const t of all) {
@@ -368,32 +368,32 @@ chrome.action.onClicked.addListener(async (tab) => {
       }
     }
   }
-  
+
   if (targetTab) stateManager.updateTab(targetTab);
-  
+
   try {
     if (chrome.sidePanel?.open) {
       await chrome.sidePanel.open({ tabId: targetTab.id });
     }
-  } catch {}
+  } catch { }
 });
 
 chrome.tabs.onCreated.addListener((tab) => {
   stateManager.updateTab(tab);
-  try { pushLog(`Tab created → ${tab.url || ""}`); } catch {}
+  try { pushLog(`Tab created → ${tab.url || ""}`); } catch { }
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   delete stateManager.tabs[tabId];
   stateManager.tabOrder = stateManager.tabOrder.filter(id => id !== tabId);
-  try { pushLog(`Tab closed → id=${tabId}`); } catch {}
+  try { pushLog(`Tab closed → id=${tabId}`); } catch { }
 });
 
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   stateManager.activeTabId = tabId;
   const t = await chrome.tabs.get(tabId).catch(() => undefined);
   if (t) stateManager.updateTab(t);
-  try { pushLog(`Tab activated → id=${tabId}, url= \`${t?.url || ""}\``); } catch {}
+  try { pushLog(`Tab activated → id=${tabId}, url= \`${t?.url || ""}\``); } catch { }
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -402,5 +402,5 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.url) {
       pushLog(`Navigation → \`${changeInfo.url}\``);
     }
-  } catch {}
+  } catch { }
 });
