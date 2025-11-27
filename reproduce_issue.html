@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Limit Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        #limited-input {
+            border: 2px solid #ccc;
+        }
+
+        #content-editable {
+            border: 2px solid #ccc;
+            padding: 10px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Character Limit Test</h1>
+
+        <div>
+            <label for="limited-input">Textarea (Max 50 chars):</label>
+            <textarea id="limited-input" maxlength="50" placeholder="Type here..."></textarea>
+            <div id="char-count">0/50</div>
+        </div>
+
+        <div>
+            <label>ContentEditable (Simulated Limit 50 chars):</label>
+            <div id="content-editable" contenteditable="true"></div>
+            <div id="ce-char-count">0/50</div>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('limited-input');
+        const count = document.getElementById('char-count');
+
+        input.addEventListener('input', () => {
+            count.textContent = `${input.value.length}/50`;
+        });
+
+        const ce = document.getElementById('content-editable');
+        const ceCount = document.getElementById('ce-char-count');
+
+        ce.addEventListener('input', (e) => {
+            const text = ce.innerText;
+            if (text.length > 50) {
+                // Simulate strict limit by truncating
+                ce.innerText = text.slice(0, 50);
+                // Move cursor to end
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(ce);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            ceCount.textContent = `${ce.innerText.length}/50`;
+        });
+    </script>
+</body>
+
+</html>

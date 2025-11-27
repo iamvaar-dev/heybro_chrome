@@ -105,64 +105,53 @@ if (!window.__heybro_logger_init) {
 }
 
 // --- 2. VisualCheck ---
-
-const VisualCheck = {
-    isVisible(el) {
+window.VisualCheck = {
+    isVisible: function (el) {
         if (!el) return false;
         const style = window.getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) return false;
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
         const rect = el.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0;
     },
 
-    isInViewport(el) {
-        if (!this.isVisible(el)) return false;
+    isObscured: function (el) {
+        if (!el) return true;
         const rect = el.getBoundingClientRect();
-        return (
-            rect.top < window.innerHeight &&
-            rect.bottom > 0 &&
-            rect.left < window.innerWidth &&
-            rect.right > 0
-        );
-    },
+        if (rect.width === 0 || rect.height === 0) return true;
 
-    isObscured(el) {
-        if (!this.isVisible(el)) return true;
-        const rect = el.getBoundingClientRect();
+        // Check center point
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const topEl = document.elementFromPoint(x, y);
 
-        // Helper to check a point
-        const checkPoint = (x, y) => {
-            if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) return false;
-            const topEl = document.elementFromPoint(x, y);
-            if (!topEl) return false;
-            if (topEl === el || el.contains(topEl) || topEl.contains(el)) return false;
-            const style = window.getComputedStyle(topEl);
-            if (style.pointerEvents === 'none') return false;
-            return true; // Obscured
-        };
-
-        // Check center
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        if (!checkPoint(cx, cy)) return false;
+        if (!topEl) return true;
+        if (topEl === el || el.contains(topEl) || topEl.contains(el)) return false;
 
         // Check corners if center is obscured
-        if (!checkPoint(rect.left + 2, rect.top + 2)) return false;
-        if (!checkPoint(rect.right - 2, rect.bottom - 2)) return false;
+        const points = [
+            { x: rect.left + 1, y: rect.top + 1 },
+            { x: rect.right - 1, y: rect.top + 1 },
+            { x: rect.left + 1, y: rect.bottom - 1 },
+            { x: rect.right - 1, y: rect.bottom - 1 }
+        ];
+
+        for (const p of points) {
+            const pointEl = document.elementFromPoint(p.x, p.y);
+            if (pointEl && (pointEl === el || el.contains(pointEl) || pointEl.contains(el))) return false;
+        }
 
         return true;
     }
 };
 
 // --- 3. SmartLocator ---
-
-const SmartLocator = {
+window.SmartLocator = {
     clean(str) {
         return String(str || "").toLowerCase().replace(/\s+/g, " ").trim();
     },
 
     score(el, criteria) {
-        if (!VisualCheck.isVisible(el)) return -1;
+        if (!window.VisualCheck.isVisible(el)) return -1;
 
         let score = 0;
         const text = this.clean(el.innerText || el.textContent);
@@ -200,7 +189,8 @@ const SmartLocator = {
         if (className.includes("btn") || className.includes("button")) score += 5;
 
         // 5. Viewport Bonus
-        if (VisualCheck.isInViewport(el)) score += 5;
+        // Removed VisualCheck.isInViewport, so this bonus is removed or needs re-evaluation
+        // if (VisualCheck.isInViewport(el)) score += 5;
 
         return score;
     },
@@ -210,21 +200,21 @@ const SmartLocator = {
         if (payload.id) {
             // Check internal map first - this is the ID we assigned
             const mapped = state.map.get(parseInt(payload.id));
-            if (mapped && VisualCheck.isVisible(mapped)) return mapped;
+            if (mapped && window.VisualCheck.isVisible(mapped)) return mapped;
         }
 
         // Strategy 2: Direct Selector
         if (payload.selector) {
             try {
                 const el = document.querySelector(payload.selector);
-                if (el && VisualCheck.isVisible(el)) return el;
+                if (el && window.VisualCheck.isVisible(el)) return el;
             } catch { }
         }
 
         // Strategy 3: DOM ID Lookup
         if (payload.id) {
             const el = document.getElementById(payload.id);
-            if (el && VisualCheck.isVisible(el)) return el;
+            if (el && window.VisualCheck.isVisible(el)) return el;
         }
 
         // Strategy 4: Scoring Scan (Robust Fallback)
@@ -279,7 +269,7 @@ const SmartLocator = {
 
 // --- 4. InteractionEngine ---
 
-const InteractionEngine = {
+window.InteractionEngine = {
     async scrollIntoView(el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         await new Promise(r => setTimeout(r, 500)); // Wait for scroll
@@ -393,37 +383,39 @@ const InteractionEngine = {
         const isContentEditable = el.isContentEditable || el.contentEditable === 'true';
 
         if (isContentEditable) {
-            // Handle contenteditable divs (like Gmail compose)
-            const newValue = append ? (el.textContent || el.innerText || '') + value : value;
+            // Handle contenteditable divs (like Gmail compose, Twitter/X)
+            // Strategy: Use Selection API to select all (if replacing) or collapse to end (if appending)
+            // then use execCommand 'insertText' which mimics native user typing and triggers correct events.
 
-            // Clear existing content if not appending
-            if (!append) {
-                el.textContent = '';
-            }
-
-            // Insert text at cursor position or append
             const selection = window.getSelection();
             const range = document.createRange();
 
-            if (el.childNodes.length > 0) {
-                range.selectNodeContents(el);
-                range.collapse(false); // Move to end
-            } else {
-                range.setStart(el, 0);
-                range.collapse(true);
-            }
-
+            range.selectNodeContents(el);
             selection.removeAllRanges();
             selection.addRange(range);
 
-            // Insert text
+            if (append) {
+                selection.collapseToEnd();
+            }
+
+            // 'insertText' will replace the selection (which is everything if !append)
+            // This is much more robust than setting textContent = '' which breaks some editors (Draft.js, etc)
             document.execCommand('insertText', false, value);
 
             // Dispatch events for frameworks
             el.dispatchEvent(new Event('input', { bubbles: true }));
             el.dispatchEvent(new Event('change', { bubbles: true }));
 
-            return (el.textContent || el.innerText || '').length;
+            // Dispatch events for frameworks
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+
+            return {
+                typed: true,
+                actual: el.innerText || el.textContent || '',
+                attempted: value,
+                append: append
+            };
         } else {
             // Handle standard input/textarea elements
             const tagName = el.tagName?.toLowerCase();
@@ -456,7 +448,25 @@ const InteractionEngine = {
             el.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
             el.dispatchEvent(new KeyboardEvent('keyup', { key: 'End', bubbles: true }));
 
-            return newValue.length;
+            // Verify the result
+            let actualValue = '';
+            if (isContentEditable) {
+                actualValue = el.innerText || el.textContent || '';
+            } else {
+                actualValue = el.value || '';
+            }
+
+            // Calculate what we expected
+            // Note: This is an approximation. If 'append' is true, we expect (original + value).
+            // But we didn't capture original perfectly before.
+            // For now, we just return what is THERE, and let the agent decide if it matches what it wanted.
+
+            return {
+                typed: true,
+                actual: actualValue,
+                attempted: value,
+                append: append
+            };
         }
     }
 };
@@ -499,8 +509,8 @@ async function execute(payload) {
     }
 
     if (action === 'type') {
-        const len = await InteractionEngine.type(el, payload.value || payload.text, payload.append);
-        return { ok: true, typed: len };
+        const result = await InteractionEngine.type(el, payload.value || payload.text, payload.append);
+        return { ok: true, ...result };
     }
 
     if (action === 'press') {
@@ -566,12 +576,17 @@ async function execute(payload) {
         }
     }
 
+    if (action === 'focus') {
+        el.focus();
+        return { ok: true, focused: true };
+    }
+
     return { ok: false, error: `Unknown action: ${action}` };
 }
 
 // --- 6. PageScanner ---
 
-const PageScanner = {
+window.PageScanner = {
     walk(root, out) {
         const stack = [root];
         const seen = new Set();
@@ -740,10 +755,15 @@ const PageScanner = {
 
 // --- Listener Setup ---
 
+window.__HEYBRO_CONTENT_VERSION = 1764211243803; // Timestamp for version check
+
 if (!window.__heybro_listener_added) {
     window.__heybro_listener_added = true;
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-        if (msg.t === "ping") { sendResponse({ ok: true }); return; }
+        if (msg.t === "ping") {
+            sendResponse({ pong: true, version: window.__HEYBRO_CONTENT_VERSION });
+            return;
+        }
         if (msg.t === "execute") {
             execute(msg.payload).then(res => sendResponse(res)).catch(e => sendResponse({ ok: false, error: e.message }));
             return true;
@@ -759,7 +779,7 @@ if (!window.__heybro_listener_added) {
         }
         if (msg.t === "simplify") {
             try {
-                const els = PageScanner.simplify(msg.annotate);
+                const els = window.PageScanner.simplify(msg.annotate);
                 sendResponse({ elements: els });
             } catch (e) {
                 console.error("Heybro: simplify error", e);
@@ -769,7 +789,7 @@ if (!window.__heybro_listener_added) {
         }
         if (msg.t === "mapCompact") {
             try {
-                const els = PageScanner.mapCompact();
+                const els = window.PageScanner.mapCompact();
                 sendResponse({ elements: els });
             } catch (e) {
                 sendResponse({ elements: [], error: e.message });
