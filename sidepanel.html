@@ -104,10 +104,6 @@
       display: block;
     }
 
-    #answer-container.stopped {
-      /* border-top: 1px solid #ef4444; Removed */
-    }
-
     #answer-container.stopped .answer-content {
       color: var(--accent);
     }
@@ -619,7 +615,7 @@
     /* Task Drawer UI */
     .task-drawer-header {
       padding: 16px;
-      border-bottom: 1px solid var(--border);
+      /* border-bottom: 1px solid var(--border); Removed border */
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -640,7 +636,7 @@
 
     .task-drawer-footer {
       padding: 16px;
-      border-top: 1px solid var(--border);
+      /* border-top: 1px solid var(--border); Removed border */
       background: var(--bg);
     }
 
@@ -653,7 +649,7 @@
       align-items: center;
       margin-bottom: 4px;
       transition: background 0.2s;
-      border: 1px solid transparent;
+      /* border: 1px solid transparent; Removed default border */
     }
 
     .task-item:hover {
@@ -816,7 +812,7 @@
   </div>
 
   <div id="task-drawer"
-    style="position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--input-bg);border-right:1px solid var(--border);z-index:200;transform:translateX(-100%);transition:transform 0.2s;display:flex;flex-direction:column;">
+    style="position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--bg);z-index:200;transform:translateX(-100%);transition:transform 0.2s;display:flex;flex-direction:column;">
     <div class="task-drawer-header">
       <span class="task-drawer-title">Tasks</span>
       <button class="btn-icon" id="close-drawer">✕</button>

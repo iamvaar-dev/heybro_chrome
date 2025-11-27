@@ -40,6 +40,68 @@ if (!window.__heybro_logger_init) {
             });
         }, { capture: true, passive: true });
     });
+
+    // Active interaction tracking for verification
+    window.__hb_last_interaction = null;
+    ['click', 'input', 'change', 'scroll'].forEach(evt => {
+        document.addEventListener(evt, (e) => {
+            if (!e.isTrusted) return;
+            const el = e.target;
+            window.__hb_last_interaction = {
+                type: evt,
+                ts: Date.now(),
+                target: {
+                    tag: el.tagName?.toLowerCase(),
+                    id: el.id,
+                    text: (el.innerText || el.value || "").slice(0, 50),
+                    path: getDomPath(el)
+                }
+            };
+        }, { capture: true, passive: true });
+    });
+
+    function getDomPath(el) {
+        if (!el) return '';
+        const stack = [];
+        while (el.parentNode != null) {
+            let sibCount = 0;
+            let sibIndex = 0;
+            for (let i = 0; i < el.parentNode.childNodes.length; i++) {
+                const sib = el.parentNode.childNodes[i];
+                if (sib.nodeName == el.nodeName) {
+                    if (sib === el) sibIndex = sibCount;
+                    sibCount++;
+                }
+            }
+            if (el.hasAttribute('id') && el.id != '') {
+                stack.unshift(el.nodeName.toLowerCase() + '#' + el.id);
+            } else if (sibCount > 1) {
+                stack.unshift(el.nodeName.toLowerCase() + ':eq(' + sibIndex + ')');
+            } else {
+                stack.unshift(el.nodeName.toLowerCase());
+            }
+            el = el.parentNode;
+        }
+        return stack.slice(1).join(' > '); // slice(1) to remove document
+    }
+
+    // Mutation Observer for State Detection
+    window.__hb_mutation_count = 0;
+    window.__hb_last_mutation_ts = Date.now();
+
+    if (!window.__hb_observer) {
+        window.__hb_observer = new MutationObserver((mutations) => {
+            window.__hb_mutation_count += mutations.length;
+            window.__hb_last_mutation_ts = Date.now();
+        });
+        window.__hb_observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true,
+            attributeFilter: ['class', 'style', 'disabled', 'value', 'aria-label', 'role'] // Filter to relevant attributes
+        });
+    }
 }
 
 // --- 2. VisualCheck ---
@@ -67,21 +129,28 @@ const VisualCheck = {
     isObscured(el) {
         if (!this.isVisible(el)) return true;
         const rect = el.getBoundingClientRect();
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
 
-        // If center is outside viewport, scroll it first or check edges
-        if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) return false; // Can't check point
+        // Helper to check a point
+        const checkPoint = (x, y) => {
+            if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) return false;
+            const topEl = document.elementFromPoint(x, y);
+            if (!topEl) return false;
+            if (topEl === el || el.contains(topEl) || topEl.contains(el)) return false;
+            const style = window.getComputedStyle(topEl);
+            if (style.pointerEvents === 'none') return false;
+            return true; // Obscured
+        };
 
-        const topEl = document.elementFromPoint(x, y);
-        if (!topEl) return false;
-        if (topEl === el || el.contains(topEl) || topEl.contains(el)) return false;
+        // Check center
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        if (!checkPoint(cx, cy)) return false;
 
-        // Check if topEl is a known transparent overlay or pointer-events: none (though elementFromPoint usually skips those)
-        const style = window.getComputedStyle(topEl);
-        if (style.pointerEvents === 'none') return false;
+        // Check corners if center is obscured
+        if (!checkPoint(rect.left + 2, rect.top + 2)) return false;
+        if (!checkPoint(rect.right - 2, rect.bottom - 2)) return false;
 
-        return true; // Obscured by topEl
+        return true;
     }
 };
 
@@ -105,6 +174,7 @@ const SmartLocator = {
         const href = this.clean(el.href || el.getAttribute('href'));
         const role = this.clean(el.getAttribute('role'));
         const tag = el.tagName.toLowerCase();
+        const className = this.clean(el.className);
 
         // 1. Exact ID/TestID match (High confidence)
         if (criteria.id && (id === criteria.id || testId === criteria.id)) score += 100;
@@ -126,7 +196,10 @@ const SmartLocator = {
         if (criteria.role && role === criteria.role) score += 10;
         if (criteria.tag && tag === criteria.tag) score += 5;
 
-        // 4. Viewport Bonus
+        // 4. Class Name Heuristics (e.g. "btn", "button")
+        if (className.includes("btn") || className.includes("button")) score += 5;
+
+        // 5. Viewport Bonus
         if (VisualCheck.isInViewport(el)) score += 5;
 
         return score;
@@ -155,7 +228,8 @@ const SmartLocator = {
         }
 
         // Strategy 4: Scoring Scan (Robust Fallback)
-        const candidates = document.querySelectorAll('a, button, input, textarea, select, [role], [onclick], [tabindex]');
+        // Expanded candidates to include potential interactive divs/spans
+        const candidates = document.querySelectorAll('a, button, input, textarea, select, [role], [onclick], [tabindex], div[class*="btn"], span[class*="btn"], div[class*="button"], span[class*="button"]');
         let bestEl = null;
         let bestScore = 0;
 
@@ -194,6 +268,11 @@ const SmartLocator = {
             } catch { }
         }
 
+        // Log failure for debugging
+        if (payload.id || payload.text || payload.selector) {
+            // console.warn("SmartLocator failed to find element:", payload, "Best Score:", bestScore);
+        }
+
         return null;
     }
 };
@@ -210,7 +289,8 @@ const InteractionEngine = {
         await this.scrollIntoView(el);
 
         if (!force && VisualCheck.isObscured(el)) {
-            console.warn("Element appears obscured, attempting direct dispatch");
+            // console.warn("Element appears obscured, forcing native click");
+            force = true;
         }
 
         // Analyze the element to predict behavior
@@ -711,7 +791,9 @@ if (!window.__heybro_listener_added) {
                             tag: active.tagName.toLowerCase(),
                             type: active.type || "",
                             text: (active.innerText || active.value || "").slice(0, 50)
-                        } : null
+                        } : null,
+                        lastInteraction: window.__hb_last_interaction,
+                        mutationCount: window.__hb_mutation_count
                     }
                 });
             } catch (e) {

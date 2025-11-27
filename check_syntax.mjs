@@ -34,7 +34,6 @@ function normalizeResultForHistory(result) {
     if (result.url) r.url = result.url;
     if (result.error) r.error = result.error;
     if (result.searchUrl) r.searchUrl = result.searchUrl;
-    if (result.mutationCount !== undefined) r.m = result.mutationCount;
     return r;
 }
 
@@ -46,8 +45,7 @@ function recordAction(action, result, preState, postState) {
         r: normalizeResultForHistory(result),
         u: postState && postState.state && postState.state.url ? postState.state.url : (preState && preState.state && preState.state.url ? preState.state.url : ""),
         ts: Date.now(),
-        v: postState && postState.state && postState.state.lastInteraction ? postState.state.lastInteraction : null,
-        m: postState && postState.state ? postState.state.mutationCount : 0
+        v: postState && postState.state && postState.state.lastInteraction ? postState.state.lastInteraction : null
     };
     state.currentRunActions.push(h);
     if (state.currentRunActions.length > 50) state.currentRunActions = state.currentRunActions.slice(-50);
@@ -180,11 +178,7 @@ function describeCall(call) {
 export async function startAutoRun() {
     const els = getEls();
     state.autoStop = false;
-    state.runAttemptId++;
-    const myRunId = state.runAttemptId;
     await setRunning(true);
-    if (state.runAttemptId !== myRunId) return;
-
     let tabId = await getInjectableTabId();
     const key = state.geminiKey.trim();
     const model = state.geminiModel.trim();
@@ -207,8 +201,6 @@ export async function startAutoRun() {
         return;
     }
 
-    if (state.runAttemptId !== myRunId) return;
-
     let currentPlan = [];
 
     // Initial context build for planning
@@ -224,7 +216,6 @@ export async function startAutoRun() {
     }
 
     currentPlan = await ensurePlanForInstruction(instruction, initialContext);
-    if (state.runAttemptId !== myRunId) return;
 
     // Initialize Live Task immediately
     if (currentPlan.length > 0) {
@@ -244,14 +235,11 @@ export async function startAutoRun() {
             try { chrome.runtime.sendMessage({ t: "TASK_ADD_RELEVANT_TAB", tabId }); } catch { }
         } catch { }
     }
-    if (state.runAttemptId !== myRunId) return;
-
     startRunState("auto", instruction);
 
     const recentActions = [];
 
     while (!state.autoStop && step < 50) {
-        if (state.runAttemptId !== myRunId) return;
         if (!tabId) {
             tabId = await getInjectableTabId();
             if (tabId) {
@@ -288,12 +276,10 @@ export async function startAutoRun() {
         } catch { }
 
         if (state.autoStop) break;
-        if (state.runAttemptId !== myRunId) return;
 
         const response = await callGemini(elements, instruction, key, model, tabId, buildHistoryForPrompt());
 
         if (state.autoStop) break;
-        if (state.runAttemptId !== myRunId) return;
 
         if (!response) {
             streamText("Planner failed to respond. Retrying...\n");
@@ -385,19 +371,9 @@ export async function startAutoRun() {
             if (state.lastCallResult && !state.lastCallResult.ok) {
                 if (now - state.lastCallAt < 500) continue;
             } else {
-                // If last call succeeded, check if state has changed significantly (mutations)
-                const currentMutations = postState && postState.state ? postState.state.mutationCount : 0;
-                const lastMutations = state.lastMutations || 0;
-                const mutationDiff = currentMutations - lastMutations;
-
-                // If significant mutations occurred (> 2), allow re-execution as it might be a toggle or state change
-                if (mutationDiff > 2) {
-                    // Allow execution, but maybe log it
-                } else {
-                    // Enforce the dedup time to prevent accidental double-clicks due to slow state updates
-                    if (now - state.lastCallAt < dedupTime) {
-                        continue;
-                    }
+                // If last call succeeded, enforce the dedup time to prevent accidental double-clicks due to slow state updates
+                if (now - state.lastCallAt < dedupTime) {
+                    continue;
                 }
             }
         }
@@ -436,7 +412,6 @@ export async function startAutoRun() {
         }
 
         const r = await execTool(tabId, nc);
-        if (state.runAttemptId !== myRunId) return;
 
         if (r && r.ok) {
             // Update plan status based on progress
@@ -488,7 +463,6 @@ export async function startAutoRun() {
             await ensureActiveAndFocused(tabId);
         }
         await ensureActiveAndFocused(tabId);
-        if (state.runAttemptId !== myRunId) return;
 
         let postState = null;
         try {
@@ -499,19 +473,13 @@ export async function startAutoRun() {
         state.lastCall = nc;
         state.lastCallAt = now;
         state.lastCallResult = r;
-        state.lastMutations = postState && postState.state ? postState.state.mutationCount : 0;
 
         await new Promise(res => setTimeout(res, 1000));
-        if (state.runAttemptId !== myRunId) return;
         step++;
     }
-
-    if (state.runAttemptId !== myRunId) return;
 
     if (tabId) await sendToAgent(tabId, { t: "working", on: false });
     await finishRunState();
     setRunning(false);
 }
 
-
-// End of agent.js
