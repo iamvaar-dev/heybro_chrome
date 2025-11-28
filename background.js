@@ -33,6 +33,8 @@ const stateManager = {
     }
   },
 
+
+
   // Record action for history
   recordAction(action, result) {
     this.actionHistory.push({
@@ -45,6 +47,7 @@ const stateManager = {
     if (this.actionHistory.length > 50) {
       this.actionHistory = this.actionHistory.slice(-50);
     }
+    this.saveState();
   },
 
   setTaskContext(ctx) {
@@ -75,6 +78,7 @@ const stateManager = {
       tc.errors = [...(tc.errors || []), ...p.errors];
     }
     this.taskContext = tc;
+    this.saveState();
   },
 
   addRelevantTab(tabId) {
@@ -110,6 +114,27 @@ const stateManager = {
       actionHistory: this.actionHistory.slice(-10),
       taskContext: this.taskContext
     };
+  },
+
+  async saveState() {
+    try {
+      await chrome.storage.local.set({
+        heybro_state: {
+          taskContext: this.taskContext,
+          actionHistory: this.actionHistory
+        }
+      });
+    } catch (e) { console.error("Save state failed", e); }
+  },
+
+  async loadState() {
+    try {
+      const r = await chrome.storage.local.get("heybro_state");
+      if (r && r.heybro_state) {
+        this.taskContext = r.heybro_state.taskContext || this.taskContext;
+        this.actionHistory = r.heybro_state.actionHistory || [];
+      }
+    } catch (e) { console.error("Load state failed", e); }
   }
 };
 
@@ -259,6 +284,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (msg.t === "SWITCH_TAB" && msg.tabId) {
     chrome.tabs.update(msg.tabId, { active: true }, async (tab) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ ok: false, error: chrome.runtime.lastError.message });
+        return;
+      }
       if (tab) {
         stateManager.updateTab(tab);
         stateManager.activeTabId = tab.id;
@@ -353,6 +382,8 @@ chrome.runtime.onInstalled.addListener(() => {
         await chrome.sidePanel.open({ tabId: tab.id });
       }
     } catch { }
+
+    await stateManager.loadState();
   })();
 });
 

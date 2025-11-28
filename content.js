@@ -109,7 +109,16 @@ window.VisualCheck = {
     isVisible: function (el) {
         if (!el) return false;
         const style = window.getComputedStyle(el);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+
+        // Special handling for Google Sheets and accessibility elements
+        // They might be transparent (opacity 0) but are still interactive via the grid
+        const role = el.getAttribute('role');
+        if (role === 'gridcell' || role === 'textbox' || role === 'button') {
+            return true;
+        }
+
+        if (style.opacity === '0') return false;
         const rect = el.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0;
     },
@@ -200,7 +209,23 @@ window.SmartLocator = {
         if (payload.id) {
             // Check internal map first - this is the ID we assigned
             const mapped = state.map.get(parseInt(payload.id));
-            if (mapped && window.VisualCheck.isVisible(mapped)) return mapped;
+            if (mapped && window.VisualCheck.isVisible(mapped)) {
+                // Zero Point Failure: Validate content if signature is present
+                // This prevents clicking the wrong element if IDs are reused or shifted
+                if (payload.sig && payload.sig.text) {
+                    const t1 = this.clean(payload.sig.text);
+                    const t2 = this.clean(mapped.innerText || mapped.value || mapped.textContent);
+                    // Only reject if both have text and they are significantly different
+                    if (t1 && t2 && t1 !== t2 && !t2.includes(t1) && !t1.includes(t2)) {
+                        // console.warn("SmartLocator: ID match rejected due to text mismatch", { id: payload.id, expected: t1, actual: t2 });
+                        // Fall through to other strategies
+                    } else {
+                        return mapped;
+                    }
+                } else {
+                    return mapped;
+                }
+            }
         }
 
         // Strategy 2: Direct Selector
@@ -233,7 +258,12 @@ window.SmartLocator = {
         };
 
         // If we have a signature from a previous map, merge it
-        if (payload.sig) {
+        if (payload.element) {
+            if (!criteria.text && payload.element.x) criteria.text = this.clean(payload.element.x);
+            if (!criteria.tag && payload.element.t) criteria.tag = this.clean(payload.element.t);
+            if (!criteria.role && payload.element.r) criteria.role = this.clean(payload.element.r);
+            if (!criteria.href && payload.element.h) criteria.href = this.clean(payload.element.h);
+        } else if (payload.sig) {
             if (!criteria.text) criteria.text = this.clean(payload.sig.text);
             if (!criteria.tag) criteria.tag = this.clean(payload.sig.tag);
             if (!criteria.role) criteria.role = this.clean(payload.sig.role);
@@ -510,6 +540,11 @@ async function execute(payload) {
 
     if (action === 'type') {
         const result = await InteractionEngine.type(el, payload.value || payload.text, payload.append);
+        if (payload.submit) {
+            el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', which: 13, keyCode: 13, bubbles: true }));
+            el.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', code: 'Enter', which: 13, keyCode: 13, bubbles: true }));
+            el.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', which: 13, keyCode: 13, bubbles: true }));
+        }
         return { ok: true, ...result };
     }
 
@@ -603,7 +638,7 @@ window.PageScanner = {
                     const hasClick = el.hasAttribute('onclick') || el.getAttribute('tabindex') === '0';
                     const hasHref = el.hasAttribute('href'); // Links with href are always interactive
                     const isInput = ['a', 'button', 'input', 'textarea', 'select', 'details', 'summary'].includes(tag);
-                    const isRole = ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'switch', 'combobox', 'textbox'].includes(role);
+                    const isRole = ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'switch', 'combobox', 'textbox', 'gridcell', 'option', 'treeitem'].includes(role);
 
                     // Refined cursor check: only if leaf node or has specific attributes
                     const style = getComputedStyle(el);
@@ -618,6 +653,7 @@ window.PageScanner = {
                         isRole ||
                         hasClick ||
                         hasHref || // Any element with href should be tagged
+                        tag === 'canvas' || // Explicitly include canvas
                         (isPointer && (isLeaf || !isGeneric));
 
                     if (isInteractive) out.push(el);
@@ -643,7 +679,7 @@ window.PageScanner = {
         state.map.clear();
         state.badges.forEach(b => b.remove());
         state.badges = [];
-        state.nextId = 1;
+        // state.nextId = 1; // Removed to ensure unique IDs across turns
 
         const els = [];
         this.walk(document, els);
@@ -686,6 +722,8 @@ window.PageScanner = {
                     else if (tag === 'select') s += 8;
                     else if (el.getAttribute('role') === 'button') s += 7;
                     else if (el.getAttribute('role') === 'link') s += 6;
+                    else if (el.getAttribute('role') === 'gridcell') s += 15; // High priority for gridcells
+                    else if (el.getAttribute('role') === 'textbox') s += 14; // High priority for textboxes
 
                     if (!el.children.length) s += 2; // Leaf node preference
                     if (String(el.innerText || "").trim().length > 0) s += 1;
@@ -729,7 +767,7 @@ window.PageScanner = {
     mapCompact() {
         // Similar to simplify but returns compact format for experimental mode
         state.map.clear();
-        state.nextId = 1;
+        // state.nextId = 1; // Removed to ensure unique IDs across turns
         const els = [];
         this.walk(document, els);
 
@@ -778,6 +816,11 @@ if (!window.__heybro_listener_added) {
             return;
         }
         if (msg.t === "simplify") {
+            // Filter out irrelevant frames (GTM, ads, etc) ONLY if we are in an iframe
+            if (window !== window.top && /googletagmanager|doubleclick|facebook\.com\/tr|google-analytics|ads\.google/.test(location.href)) {
+                sendResponse({ elements: [] });
+                return;
+            }
             try {
                 const els = window.PageScanner.simplify(msg.annotate);
                 sendResponse({ elements: els });
@@ -788,6 +831,11 @@ if (!window.__heybro_listener_added) {
             return;
         }
         if (msg.t === "mapCompact") {
+            // Filter out irrelevant frames ONLY if we are in an iframe
+            if (window !== window.top && /googletagmanager|doubleclick|facebook\.com\/tr|google-analytics|ads\.google/.test(location.href)) {
+                sendResponse({ elements: [] });
+                return;
+            }
             try {
                 const els = window.PageScanner.mapCompact();
                 sendResponse({ elements: els });
@@ -800,9 +848,19 @@ if (!window.__heybro_listener_added) {
             try {
                 const sel = window.getSelection();
                 const active = document.activeElement;
+                let currentUrl = location.href;
+                let isIframe = window !== window.top;
+                try {
+                    // Try to get top URL if possible (same origin)
+                    if (isIframe && window.top.location.href) {
+                        currentUrl = window.top.location.href;
+                        isIframe = false; // Treat as top if we can access it
+                    }
+                } catch { }
+
                 sendResponse({
                     state: {
-                        url: location.href,
+                        url: currentUrl,
                         title: document.title,
                         readyState: document.readyState,
                         scroll: { y: window.scrollY, x: window.scrollX },
@@ -813,7 +871,8 @@ if (!window.__heybro_listener_added) {
                             text: (active.innerText || active.value || "").slice(0, 50)
                         } : null,
                         lastInteraction: window.__hb_last_interaction,
-                        mutationCount: window.__hb_mutation_count
+                        mutationCount: window.__hb_mutation_count,
+                        isIframe: isIframe
                     }
                 });
             } catch (e) {
